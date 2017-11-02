@@ -4,13 +4,13 @@
             Troubleshooting
         </p>
         <ul class="menu-list">
-            <li><a>Ping</a></li>
+            <li><router-link to="ping">Ping Tool</router-link></li>
         </ul>
         <p class="menu-label">
             Messaging
         </p>
         <ul class="menu-list">
-            <li><a>XML Injector</a></li>
+            <li><router-link to="xmlInjector">XML Injector</router-link></li>
         </ul>
     </aside>
 </template>
@@ -25,8 +25,8 @@
 
 <style>
     aside {
-        color: white;
-        background-color: transparent;
-        border-right: 2px black solid;
+
     }
+
+
 </style>

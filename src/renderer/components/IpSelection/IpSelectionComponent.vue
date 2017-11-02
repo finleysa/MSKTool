@@ -1,13 +1,17 @@
 <template>
     <div>
         <div class="field">
-            <div class="control">
-                <input v-if="!ipAddress.show" v-model="ipAddress.device"  v-on:keyup.enter="setIP"
-                       class="input" type="text" placeholder="Device">
-                <input v-if="!ipAddress.show" v-model="ipAddress.value"  v-on:keyup.enter="setIP"
-                       class="input" type="text" placeholder="IP Address">
+            <div class="columns">
+                <div class="column">
+                    <input v-if="!ipAddress.show" v-model="ipAddress.device"  v-on:keyup.enter="setIP"
+                           class="input column" type="text" placeholder="Device">
+                </div>
+                <div class="column">
+                    <input v-if="!ipAddress.show" v-model="ipAddress.value"  v-on:keyup.enter="setIP"
+                           class="input" type="text" placeholder="IP Address">
+                </div>
             </div>
-            <div v-if="ipAddress.show" class="columns">
+            <div class="columns" v-if="ipAddress.show">
                 <div class="column">
                     <label v-bind:class="{ 'border-green': ipAddress.isAlive, 'border-red': !ipAddress.isAlive }"
                            class="ip-label" v-on:dblclick="showIpInput">{{ipAddress.device}} </label>
@@ -15,11 +19,6 @@
                 <div class="column">
                     <label v-bind:class="{ 'border-green': ipAddress.isAlive, 'border-red': !ipAddress.isAlive }"
                            class="ip-label" v-on:dblclick="showIpInput">DEST: {{ipAddress.value}} </label>
-                </div>
-
-                <div v-if="pingData" class="column">
-                    <label v-bind:class="{ 'border-green': ipAddress.isAlive, 'border-red': !ipAddress.isAlive }"
-                            class="ip-label">HOST: {{this.pingData.host}} </label>
                 </div>
 
                 <div v-if="pingData" class="column">
@@ -47,7 +46,7 @@
                     value: "",
                     show: false,
                     isAlive: null,
-                    devcice: null
+                    device: null
                 },
                 ping: new icmp(),
                 pingData: null,
@@ -92,6 +91,7 @@
         padding-bottom: 3px;
         border-bottom: 2px solid;
         font-size: 20px;
+        margin-bottom: 10px;
     }
 
     .border-green{
