@@ -1,113 +1,122 @@
 <template>
     <div>
-        <div id="ping">
-            <div class="container columns">
-                <div class="column">
-                    <label class="title">Ping Tool </label>
-                </div>
-                <div class="column">
-                    <button class="button is-link is-outlined" v-on:click="">ADD</button>
-                </div>
+
+        <div class="container columns">
+            <div class="column">
+                <label class="title">Ping Tool </label>
             </div>
+            <div class="column">
+                <button class="button is-link is-outlined" v-on:click="addAddress">ADD</button>
+            </div>
+        </div>
+
+        <div v-for="adr in addresses" :key="adr.id">
             <form>
                 <div class="field">
                     <div class="columns">
                         <div class="column">
-                            <input v-if="!address.show" v-model="address.device"  v-on:keyup.enter="setIP"
+                            <input v-if="!adr.show" v-model="adr.device"  v-on:keyup.enter="setIP(adr)"
                                    class="input column" type="text" placeholder="Device">
                         </div>
                         <div class="column">
-                            <input v-if="!address.show" v-model="address.ip"  v-on:keyup.enter="setIP"
+                            <input v-if="!adr.show" v-model="adr.ip"  v-on:keyup.enter="setIP(adr)"
                                    class="input" type="text" placeholder="IP Address">
+                        </div>
+                        <div class="column is-one-quarter">
+                            <a v-if="!adr.show" class="delete is-large" v-on:click="deleteAddress(adr)"></a>
                         </div>
                     </div>
                 </div>
             </form>
 
-            <div class="container">
-                <div class="columns">
-                    <div v-for="adr in addresses" v-if="adr.show" :key="adr.id">
-                        <div class="columns">
-                            <div class="column">
-                                <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
-                                       class="ip-label" v-on:dblclick="showIpInput(adr)">{{adr.device}}</label>
-                            </div>
-                            <div class="column">
-                                <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
-                                       class="ip-label" v-on:dblclick="showIpInput(adr)">{{adr.ip}} </label>
-                            </div>
-
-                            <div v-if="!adr.isAlive" class="column">
-                                <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
-                                       class="ip-label" v-on:dblclick="showIpInput(adr)">0.000</label>
-                            </div>
-
-                            <div v-if="adr.isAlive" class="column">
-                                <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
-                                       class="ip-label" v-on:dblclick="showIpInput(adr)">{{adr.avg}} </label>
-                            </div>
-
-                            <div class="column">
-                                <button v-on:click="startPingaddress(adr)" v-if="!adr.ping.interval" class="button is-info is-pulled-right">Start Ping</button>
-                                <button v-on:click="clear(adr)" v-if="adr.ping.interval" class="button is-info is-pulled-right">Stop Ping</button>
-                            </div>
-
-                        </div>
-                    </div>
+            <div class="columns" v-if="adr.show">
+                <div class="column">
+                    <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
+                           class="ip-label" v-on:dblclick="showIpInput(adr)">{{adr.device}}</label>
                 </div>
-            </div>
 
+                <div class="column">
+                    <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
+                           class="ip-label" v-on:dblclick="showIpInput(adr)">{{adr.ip}} </label>
+                </div>
+
+                <div v-if="!adr.isAlive" class="column">
+                    <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
+                           class="ip-label" v-on:dblclick="showIpInput(adr)">0.000</label>
+                </div>
+
+                <div v-if="adr.isAlive" class="column">
+                    <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
+                           class="ip-label" v-on:dblclick="showIpInput(adr)">{{adr.avg}} </label>
+                </div>
+
+                <div class="column">
+                    <button v-on:click="stopPingAddress(adr)"  v-if="adr.interval"  class="button is-info is-pulled-right">Stop</button>
+                    <button v-on:click="startPingAddress(adr)" v-if="!adr.interval" class="button is-info is-pulled-right">Start Ping</button>
+                </div>
+
+                <!--<div class="column">-->
+                    <!--<a v-if="adr.show" class="delete is-large" v-on:click="deleteAddress(adr)"></a>-->
+                <!--</div>-->
+            </div>
         </div>
+
     </div>
 </template>
 
 <script>
-    import PingModel from '../../ping';
     import IpDeviceInfo from '../../IpDeviceInfo'
+    import _ from 'lodash';
 
     export default {
         name: 'ip-selection',
         data()  {
             return {
-                pingData: null,
                 idIncrement: 0,
-                address: new IpDeviceInfo(),
                 addresses: []
             }
         },
         created() {
-
+            this.addAddress();
         },
         methods: {
-            setIP(e) {
-                if(this.address.ip.length >= 7) {
-                    let newAddress = this.address;
+            setIP(adr) {
+                if(adr.ip.length >= 7) {
+                    let newAddress = adr;
 
                     newAddress.id = this.idIncrement++;
                     newAddress.show = true;
                     newAddress.ping.addHost(newAddress.ip);
-                    this.addresses.push(newAddress)
-
-                    this.address = new IpDeviceInfo();
+                    if(!_.find(this.addresses, (n)=> adr ==n)) {
+                        this.addresses.push(newAddress)
+                    }
                 }
             },
             showIpInput(adr) {
                 adr.show = false;
                 adr.ping.removeHost();
-                if (adr.interval){ clearTimeout(adr.interval)};
             },
-            startPingaddress(adr) {
-                adr.ping.pingHost((res) =>
-                {
+            stopPingAddress(adr) {
+                clearTimeout(adr.interval)
+                adr.interval = null;
+
+            },
+            startPingAddress(adr) {
+                adr.ping.pingHost((res) => {
                     adr.isAlive = res.alive;
                     adr.avg = res.avg;
-                    adr.ping.interval = setTimeout(this.startPingaddress(adr), 2000);
-                })
+                    adr.interval = setTimeout(()=>{this.startPingAddress(adr)}, 2000);
+                });
             },
-            clear(adr) {
-                clearTimeout(adr.ping.interval)
-                adr.ping.interval = null;
+            addAddress() {
+                this.addresses.push(new IpDeviceInfo());
+            },
+            deleteAddress(adr) {
+                if(adr.interval) this.stopPingAddress(adr);
+                let removeIndex = this.addresses.map(function(item) { return item.id; }).indexOf(adr.id);
+                this.addresses.splice(removeIndex, 1);
             }
+
         }
     }
 </script>

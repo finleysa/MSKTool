@@ -1,4 +1,4 @@
-import icmp from "./ping";
+import PingModel from "./ping";
 
 export default class IpDeviceInfo {
 
@@ -8,11 +8,12 @@ export default class IpDeviceInfo {
     show = false;
     avg = 0;
     isAlive = false;
-    ping = new icmp();
+    interval = null;
 
     constructor() {
-
+        this.ping = new PingModel();
     }
+    
 }
 
 /**

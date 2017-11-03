@@ -4,7 +4,6 @@ export default class PingModel {
 
     constructor() {
         this.host = null;
-        this.interval = null;
     }
 
     addHost(host) {
@@ -22,5 +21,7 @@ export default class PingModel {
                 fn(res);
             });
     }
+
+
 
 }
