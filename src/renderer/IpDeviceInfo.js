@@ -2,16 +2,16 @@ import PingModel from "./ping";
 
 export default class IpDeviceInfo {
 
-    id = "";
-    ip = "";
-    device = "";
-    show = false;
-    avg = 0;
-    isAlive = false;
-    interval = null;
-
-    constructor() {
+    constructor(obj) {
         this.ping = new PingModel();
+        this.ping.host = obj.host;
+        this.id = obj.id || "";
+        this.ip = obj.ip || "";
+        this.device = obj.device || "";
+        this.show = obj.show || false;
+        this.avg = obj.avg || 0;
+        this.isAlive = obj.isAlive || false;
+        this.interval = obj.interval;
     }
     
 }

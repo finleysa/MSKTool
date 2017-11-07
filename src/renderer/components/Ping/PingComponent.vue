@@ -6,11 +6,25 @@
                 <label class="title">Ping Tool </label>
             </div>
             <div class="column">
-                <button class="button is-link is-outlined" v-on:click="addAddress">ADD</button>
+                <button class="button is-link is-outlined" v-on:click="addAddress">Add</button>
+                <button class="button is-link is-outlined" v-on:click="showCards">Show Brief</button>
+                <button class="button is-link is-outlined" v-on:click="saveDevices">Save</button>
+
             </div>
         </div>
 
-        <div v-for="adr in addresses" :key="adr.id">
+        <div v-if="cards" v-for="adr in addresses" :key="adr.id">
+            <div v-if="adr.interval" class="card">
+                <header class="card-header">
+                    <p class="card-header-title">
+                        <span class="tag">{{adr.device}}</span><span class="tag is-success">Success</span>
+                        <progress v-if="adr.isAlive" class="progress" :value=500-adr.avg max="500">{{adr.avg}}%</progress>
+                    </p>
+                </header>
+            </div>
+        </div>
+
+        <div v-if="!cards" v-for="adr in addresses" :key="adr.id">
             <form>
                 <div class="field">
                     <div class="columns">
@@ -29,24 +43,24 @@
                 </div>
             </form>
 
-            <div class="columns" v-if="adr.show">
+            <div class="columns" v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }" v-if="adr.show" >
                 <div class="column">
-                    <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
+                    <label
                            class="ip-label" v-on:dblclick="showIpInput(adr)">{{adr.device}}</label>
                 </div>
 
                 <div class="column">
-                    <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
+                    <label
                            class="ip-label" v-on:dblclick="showIpInput(adr)">{{adr.ip}} </label>
                 </div>
 
                 <div v-if="!adr.isAlive" class="column">
-                    <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
+                    <label
                            class="ip-label" v-on:dblclick="showIpInput(adr)">0.000</label>
                 </div>
 
                 <div v-if="adr.isAlive" class="column">
-                    <label v-bind:class="{ 'border-green': adr.isAlive, 'border-red': !adr.isAlive }"
+                    <label
                            class="ip-label" v-on:dblclick="showIpInput(adr)">{{adr.avg}} </label>
                 </div>
 
@@ -67,17 +81,31 @@
 <script>
     import IpDeviceInfo from '../../IpDeviceInfo'
     import _ from 'lodash';
+    import jsonfile from  'jsonfile';
 
     export default {
         name: 'ip-selection',
         data()  {
             return {
                 idIncrement: 0,
-                addresses: []
+                addresses: [],
+                cards: false
             }
         },
         created() {
-            this.addAddress();
+            jsonfile.readFile(__dirname + '/../devices.json', (err, obj) => {
+                if(err) console.log(err);
+                else {
+                    _.map(obj, (n) => {
+                        console.log(n);
+                        if(n.ip && n.device) {
+                            n.avg = 0.000;
+                            n.isAlive = false;
+                            this.setIP(new IpDeviceInfo(n));
+                        }
+                    })
+                }
+            });
         },
         methods: {
             setIP(adr) {
@@ -86,20 +114,23 @@
 
                     newAddress.id = this.idIncrement++;
                     newAddress.show = true;
+                    newAddress.interval = null;
                     newAddress.ping.addHost(newAddress.ip);
-                    if(!_.find(this.addresses, (n)=> adr ==n)) {
+                    if(!_.find(this.addresses, (n)=> adr.id === n.id)) {
                         this.addresses.push(newAddress)
                     }
+
                 }
             },
             showIpInput(adr) {
                 adr.show = false;
+                adr.isAlive = false;
                 adr.ping.removeHost();
+                this.stopPingAddress(adr);
             },
             stopPingAddress(adr) {
                 clearTimeout(adr.interval)
                 adr.interval = null;
-
             },
             startPingAddress(adr) {
                 adr.ping.pingHost((res) => {
@@ -109,12 +140,27 @@
                 });
             },
             addAddress() {
-                this.addresses.push(new IpDeviceInfo());
+                this.addresses.push(new IpDeviceInfo({}));
             },
             deleteAddress(adr) {
                 if(adr.interval) this.stopPingAddress(adr);
                 let removeIndex = this.addresses.map(function(item) { return item.id; }).indexOf(adr.id);
                 this.addresses.splice(removeIndex, 1);
+            },
+            showCards() {
+                this.cards = !this.cards;
+            },
+            saveDevices() {
+                let tempSave = [];
+                _.map(this.addresses, (n) => {
+                    if(n.ip.length >= 7) {
+                        tempSave.push(n);
+                    }
+                });
+                jsonfile.writeFile(__dirname + '/../devices.json', tempSave, function (err) {
+                    if(err) console.error(err);
+                    else console.info('saved');
+                });
             }
 
         }
@@ -125,18 +171,25 @@
     .ip-label{
         width: 100%;
         padding-bottom: 3px;
-        border-bottom: 2px solid;
         font-size: 20px;
         margin-bottom: 10px;
     }
 
     .border-green{
+        border-bottom: 2px solid;
         border-color: limegreen;
     }
 
     .border-red {
+        border-bottom: 2px solid;
         border-color: red;
     }
+
+    form {
+        margin: 15px 0;
+    }
+
+
 </style>
 
 

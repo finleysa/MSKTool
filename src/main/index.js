@@ -1,4 +1,5 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow} from 'electron'
+const {dialog} = require('electron')
 
 /**
  * Set `__static` path to static files in production
@@ -17,7 +18,8 @@ function createWindow () {
   /**
    * Initial window options
    */
-  mainWindow = new BrowserWindow({
+
+    mainWindow = new BrowserWindow({
     height: 400,
     useContentSize: true,
     width: 900
