@@ -5,24 +5,36 @@
             <div class="column">
                 <label class="title">Ping Tool </label>
             </div>
-            <div class="column">
-                <button class="button is-link is-outlined" v-on:click="addAddress">Add</button>
+            <div class="column is-three-quarters">
                 <button class="button is-link is-outlined" v-on:click="showCards">Show Brief</button>
                 <button class="button is-link is-outlined" v-on:click="saveDevices">Save</button>
+                <button class="button is-link is-outlined" v-on:click="addAddress">Add</button>
+                <button class="button is-link is-outlined" v-on:click="pingAllDevices">Ping All</button>
+                <button class="button is-link is-outlined" v-on:click="resetAllDevices">Reset All</button>
+                <button class="button is-link is-outlined" v-on:click="stopAllDevices">Stop All</button>
 
             </div>
         </div>
 
-        <div v-if="cards" v-for="adr in addresses" :key="adr.id">
-            <div v-if="adr.interval" class="card">
-                <header class="card-header">
-                    <p class="card-header-title">
-                        <span class="tag">{{adr.device}}</span><span class="tag is-success">Success</span>
-                        <progress v-if="adr.isAlive" class="progress" :value=500-adr.avg max="500">{{adr.avg}}%</progress>
-                    </p>
-                </header>
-            </div>
-        </div>
+        <table v-if="cards" class="table">
+            <tbody>
+                    <tr v-for="adr in addresses" :key="adr.id">
+                        <td v-if="adr.interval">
+                            {{adr.device}}
+                        </td>
+                        <td v-if="adr.isAlive && adr.interval">
+                            <span class="icon has-text-success">
+                              <i class="fa fa-check-square"></i>
+                            </span>
+                        </td>
+                        <td v-else-if="!adr.isAlive && adr.interval">
+                            <span class="icon has-text-danger">
+                              <i class="fa fa-ban"></i>
+                            </span>
+                        </td>
+                    </tr>
+            </tbody>
+        </table>
 
         <div v-if="!cards" v-for="adr in addresses" :key="adr.id">
             <form>
@@ -108,6 +120,41 @@
             });
         },
         methods: {
+            addAddress() {
+                this.addresses.push(new IpDeviceInfo({}));
+            },
+            deleteAddress(adr) {
+                if(adr.interval) this.stopPingAddress(adr);
+                let removeIndex = this.addresses.map(function(item) { return item.id; }).indexOf(adr.id);
+                this.addresses.splice(removeIndex, 1);
+            },
+            pingAllDevices() {
+                _.map(this.addresses, (n)=>{
+                    if (n.interval || n.ip.length < 7) return;
+                    this.startPingAddress(n);
+                });
+            },
+            resetAllDevices() {
+                _.map(this.addresses, (n) => {
+                    if(n.ping.host) {
+                        n.ping.removeHost()
+                    } else {
+                        n.ping.addHost(n.ip);
+                    }
+                });
+            },
+            saveDevices() {
+                let tempSave = [];
+                _.map(this.addresses, (n) => {
+                    if(n.ip.length >= 7) {
+                        tempSave.push(n);
+                    }
+                });
+                jsonfile.writeFile(__dirname + '/../devices.json', tempSave, function (err) {
+                    if(err) console.error(err);
+                    else console.info('saved');
+                });
+            },
             setIP(adr) {
                 if(adr.ip.length >= 7) {
                     let newAddress = adr;
@@ -122,47 +169,36 @@
 
                 }
             },
+            showCards() {
+                this.cards = !this.cards;
+            },
             showIpInput(adr) {
                 adr.show = false;
                 adr.isAlive = false;
                 adr.ping.removeHost();
                 this.stopPingAddress(adr);
             },
-            stopPingAddress(adr) {
-                clearTimeout(adr.interval)
-                adr.interval = null;
-            },
             startPingAddress(adr) {
                 adr.ping.pingHost((res) => {
                     adr.isAlive = res.alive;
                     adr.avg = res.avg;
-                    adr.interval = setTimeout(()=>{this.startPingAddress(adr)}, 2000);
+                    adr.interval = setTimeout(()=>{
+                        this.startPingAddress(adr)
+                    }, 2000);
                 });
             },
-            addAddress() {
-                this.addresses.push(new IpDeviceInfo({}));
-            },
-            deleteAddress(adr) {
-                if(adr.interval) this.stopPingAddress(adr);
-                let removeIndex = this.addresses.map(function(item) { return item.id; }).indexOf(adr.id);
-                this.addresses.splice(removeIndex, 1);
-            },
-            showCards() {
-                this.cards = !this.cards;
-            },
-            saveDevices() {
-                let tempSave = [];
-                _.map(this.addresses, (n) => {
-                    if(n.ip.length >= 7) {
-                        tempSave.push(n);
-                    }
+            stopAllDevices() {
+                _.map(this.addresses, (n)=>{
+                    this.stopPingAddress(n);
                 });
-                jsonfile.writeFile(__dirname + '/../devices.json', tempSave, function (err) {
-                    if(err) console.error(err);
-                    else console.info('saved');
-                });
+            },
+            stopPingAddress(adr) {
+                if(adr.interval) {
+                    clearTimeout(adr.interval);
+                    adr.interval = null;
+                    adr.isAlive = false;
+                }
             }
-
         }
     }
 </script>
